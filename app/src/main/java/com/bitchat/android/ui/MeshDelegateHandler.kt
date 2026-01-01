@@ -65,9 +65,7 @@ class MeshDelegateHandler(
                 }
             } else if (message.channel != null) {
                 // Channel message
-                if (state.getJoinedChannelsValue().contains(message.channel)) {
-                    channelManager.addChannelMessage(message.channel, message, message.senderPeerID)
-                }
+                channelManager.addChannelMessage(message.channel, message, message.senderPeerID)
             } else {
                 // Public mesh message - always store to preserve message history
                 messageManager.addMessage(message)

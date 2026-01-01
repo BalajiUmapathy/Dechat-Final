@@ -44,11 +44,7 @@ class MessageManager(private val state: ChatState) {
     
     fun addChannelMessage(channel: String, message: BitchatMessage) {
         val currentChannelMessages = state.getChannelMessagesValue().toMutableMap()
-        if (!currentChannelMessages.containsKey(channel)) {
-            currentChannelMessages[channel] = mutableListOf()
-        }
-        
-        val channelMessageList = currentChannelMessages[channel]?.toMutableList() ?: mutableListOf()
+        val channelMessageList = currentChannelMessages.getOrPut(channel) { mutableListOf() }.toMutableList()
         channelMessageList.add(message)
         currentChannelMessages[channel] = channelMessageList
         state.setChannelMessages(currentChannelMessages)

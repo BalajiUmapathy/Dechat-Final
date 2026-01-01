@@ -9,11 +9,6 @@ import androidx.lifecycle.viewModelScope
 import com.bitchat.android.mesh.BluetoothMeshDelegate
 import com.bitchat.android.mesh.BluetoothMeshService
 import com.bitchat.android.model.BitchatMessage
-import com.bitchat.android.model.BitchatMessageType
-import com.bitchat.android.protocol.BitchatPacket
-
-
-import kotlinx.coroutines.launch
 import com.bitchat.android.util.NotificationIntervalManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -28,7 +23,6 @@ class ChatViewModel(
     application: Application,
     val meshService: BluetoothMeshService
 ) : AndroidViewModel(application), BluetoothMeshDelegate {
-    private val debugManager by lazy { try { com.bitchat.android.ui.debug.DebugSettingsManager.getInstance() } catch (e: Exception) { null } }
 
     companion object {
         private const val TAG = "ChatViewModel"
@@ -48,10 +42,6 @@ class ChatViewModel(
 
     // MARK: - State management
     private val state = ChatState()
-
-    // Transfer progress tracking
-    private val transferMessageMap = mutableMapOf<String, String>()
-    private val messageTransferMap = mutableMapOf<String, String>()
 
     // Specialized managers
     private val dataManager = DataManager(application.applicationContext)
@@ -115,12 +105,8 @@ class ChatViewModel(
     val currentChannel: LiveData<String?> = state.currentChannel
     val channelMessages: LiveData<Map<String, List<BitchatMessage>>> = state.channelMessages
     val unreadChannelMessages: LiveData<Map<String, Int>> = state.unreadChannelMessages
-    val passwordProtectedChannels: LiveData<Set<String>> = state.passwordProtectedChannels
-    val showPasswordPrompt: LiveData<Boolean> = state.showPasswordPrompt
     val passwordPromptChannel: LiveData<String?> = state.passwordPromptChannel
     val showSidebar: LiveData<Boolean> = state.showSidebar
-    val hasUnreadChannels = state.hasUnreadChannels
-    val hasUnreadPrivateMessages = state.hasUnreadPrivateMessages
     val showCommandSuggestions: LiveData<Boolean> = state.showCommandSuggestions
     val commandSuggestions: LiveData<List<CommandSuggestion>> = state.commandSuggestions
     val showMentionSuggestions: LiveData<Boolean> = state.showMentionSuggestions
@@ -135,7 +121,6 @@ class ChatViewModel(
     val selectedLocationChannel: LiveData<com.bitchat.android.geohash.ChannelID?> = state.selectedLocationChannel
     val isTeleported: LiveData<Boolean> = state.isTeleported
     val geohashPeople: LiveData<List<GeoPerson>> = state.geohashPeople
-    val teleportedGeo: LiveData<Set<String>> = state.teleportedGeo
     val geohashParticipantCounts: LiveData<Map<String, Int>> = state.geohashParticipantCounts
 
     init {
@@ -220,11 +205,6 @@ class ChatViewModel(
         // Note: Mesh service is now started by MainActivity
 
         // BLE receives are inserted by MessageHandler path; no VoiceNoteBus for Tor in this branch.
-    }
-    
-    override fun onCleared() {
-        super.onCleared()
-        // Note: Mesh service lifecycle is now managed by MainActivity
     }
     
     // MARK: - Nickname Management
@@ -361,7 +341,7 @@ class ChatViewModel(
                 targetKey
             } else {
                 // Resolve to a canonical mesh peer if needed
-                val canonical = com.bitchat.android.services.ConversationAliasResolver.resolveCanonicalPeerID(
+                com.bitchat.android.services.ConversationAliasResolver.resolveCanonicalPeerID(
                     selectedPeerID = targetKey,
                     connectedPeers = state.getConnectedPeersValue(),
                     meshNoiseKeyForPeer = { pid -> meshService.getPeerInfo(pid)?.noisePublicKey },
@@ -369,7 +349,6 @@ class ChatViewModel(
                     nostrPubHexForAlias = { alias -> com.bitchat.android.nostr.GeohashAliasRegistry.get(alias) },
                     findNoiseKeyForNostr = { key -> com.bitchat.android.favorites.FavoritesPersistenceService.shared.findNoiseKey(key) }
                 )
-                canonical ?: targetKey
             }
 
             startPrivateChat(openPeer)
@@ -459,7 +438,7 @@ class ChatViewModel(
                     timestamp = Date(),
                     isRelay = false,
                     senderPeerID = meshService.myPeerID,
-                    mentions = if (mentions.isNotEmpty()) mentions else null,
+                    mentions = mentions.ifEmpty { null },
                     channel = currentChannelValue
                 )
 
@@ -474,7 +453,7 @@ class ChatViewModel(
                             currentChannelValue,
                             state.getNicknameValue(),
                             meshService.myPeerID,
-                            onEncryptedPayload = { encryptedData ->
+                            onEncryptedPayload = { _ ->
                                 // This would need proper mesh service integration
                                 meshService.sendMessage(content, mentions, currentChannelValue)
                             },
@@ -494,10 +473,6 @@ class ChatViewModel(
     }
 
     // MARK: - Utility Functions
-    
-    fun getPeerIDForNickname(nickname: String): String? {
-        return meshService.getPeerNicknames().entries.find { it.value == nickname }?.key
-    }
     
     fun toggleFavorite(peerID: String) {
         Log.d("ChatViewModel", "toggleFavorite called for peerID: $peerID")
@@ -519,7 +494,7 @@ class ChatViewModel(
                     try {
                         noiseKey = peerID.chunked(2).map { it.toInt(16).toByte() }.toByteArray()
                         // Prefer nickname from favorites store if available
-                        val rel = com.bitchat.android.favorites.FavoritesPersistenceService.shared.getFavoriteStatus(noiseKey!!)
+                        val rel = com.bitchat.android.favorites.FavoritesPersistenceService.shared.getFavoriteStatus(noiseKey)
                         if (rel != null) nickname = rel.peerNickname
                     } catch (_: Exception) { }
                 }
@@ -528,11 +503,11 @@ class ChatViewModel(
             if (noiseKey != null) {
                 // Determine current favorite state from DataManager using fingerprint
                 val identityManager = com.bitchat.android.identity.SecureIdentityStateManager(getApplication())
-                val fingerprint = identityManager.generateFingerprint(noiseKey!!)
+                val fingerprint = identityManager.generateFingerprint(noiseKey)
                 val isNowFavorite = dataManager.favoritePeers.contains(fingerprint)
 
                 com.bitchat.android.favorites.FavoritesPersistenceService.shared.updateFavoriteStatus(
-                    noisePublicKey = noiseKey!!,
+                    noisePublicKey = noiseKey,
                     nickname = nickname,
                     isFavorite = isNowFavorite
                 )
@@ -626,13 +601,6 @@ class ChatViewModel(
     }
 
     // MARK: - Debug and Troubleshooting
-    
-    fun getDebugStatus(): String {
-        return meshService.getDebugStatus()
-    }
-    
-    // Note: Mesh service restart is now handled by MainActivity
-    // This function is no longer needed
     
     fun setAppBackgroundState(inBackground: Boolean) {
         // Forward to notification manager for notification logic
@@ -811,13 +779,6 @@ class ChatViewModel(
         } catch (e: Exception) {
             Log.e(TAG, "❌ Error clearing cryptographic data: ${e.message}")
         }
-    }
-
-    /**
-     * Get participant count for a specific geohash (5-minute activity window)
-     */
-    fun geohashParticipantCount(geohash: String): Int {
-        return geohashViewModel.geohashParticipantCount(geohash)
     }
 
     /**

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.lifecycleScope
@@ -157,7 +158,7 @@ class MainActivity : OrientationAwareActivity() {
                     context.unregisterReceiver(receiver)
                     Log.d("BluetoothStatusUI", "BroadcastReceiver unregistered")
                 } catch (e: IllegalStateException) {
-                    Log.w("BluetoothStatusUI", "Receiver was not registered")
+                    Log.w("BluetoothStatusUI", "Receiver was not registered: ${e.message}")
                 }
             }
         }
@@ -245,7 +246,13 @@ class MainActivity : OrientationAwareActivity() {
 
                 // Add the callback - this will be automatically removed when the activity is destroyed
                 onBackPressedDispatcher.addCallback(this, backCallback)
-                ChatScreen(viewModel = chatViewModel)
+                val currentChannel by chatViewModel.currentChannel.observeAsState()
+                val channelMessages by chatViewModel.channelMessages.observeAsState(emptyMap())
+                val messages by chatViewModel.messages.observeAsState(emptyList())
+                ChatScreen(
+                    viewModel = chatViewModel,
+                    messages = if (currentChannel != null) channelMessages[currentChannel] ?: emptyList() else messages
+                )
             }
             
             OnboardingState.ERROR -> {
@@ -269,10 +276,10 @@ class MainActivity : OrientationAwareActivity() {
         when (state) {
             OnboardingState.COMPLETE -> {
                 // App is fully initialized, mesh service is running
-                android.util.Log.d("MainActivity", "Onboarding completed - app ready")
+                Log.d("MainActivity", "Onboarding completed - app ready")
             }
             OnboardingState.ERROR -> {
-                android.util.Log.e("MainActivity", "Onboarding error state reached")
+                Log.e("MainActivity", "Onboarding error state reached")
             }
             else -> {}
         }
@@ -321,7 +328,7 @@ class MainActivity : OrientationAwareActivity() {
             }
             BluetoothStatus.NOT_SUPPORTED -> {
                 // Device doesn't support Bluetooth
-                android.util.Log.e("MainActivity", "Bluetooth not supported")
+                Log.e("MainActivity", "Bluetooth not supported")
                 mainViewModel.updateOnboardingState(OnboardingState.BLUETOOTH_CHECK)
                 mainViewModel.updateBluetoothLoading(false)
             }
@@ -491,7 +498,7 @@ class MainActivity : OrientationAwareActivity() {
             }
             currentBatteryOptimizationStatus == BatteryOptimizationStatus.ENABLED -> {
                 // Battery optimization still enabled, show battery optimization screen
-                android.util.Log.d("MainActivity", "Permissions granted, but battery optimization still enabled. Showing battery optimization screen.")
+                Log.d("MainActivity", "Permissions granted, but battery optimization still enabled. Showing battery optimization screen.")
                 mainViewModel.updateBatteryOptimizationStatus(currentBatteryOptimizationStatus)
                 mainViewModel.updateOnboardingState(OnboardingState.BATTERY_OPTIMIZATION_CHECK)
                 mainViewModel.updateBatteryOptimizationLoading(false)
@@ -515,19 +522,19 @@ class MainActivity : OrientationAwareActivity() {
      * Check Battery Optimization status and proceed with onboarding flow
      */
     private fun checkBatteryOptimizationAndProceed() {
-        android.util.Log.d("MainActivity", "Checking battery optimization status")
+        Log.d("MainActivity", "Checking battery optimization status")
         
         // For first-time users, skip battery optimization check and go straight to permissions
         // We'll check battery optimization after permissions are granted
         if (permissionManager.isFirstTimeLaunch()) {
-            android.util.Log.d("MainActivity", "First-time launch, skipping battery optimization check - will check after permissions")
+            Log.d("MainActivity", "First-time launch, skipping battery optimization check - will check after permissions")
             proceedWithPermissionCheck()
             return
         }
         
         // Check if user has previously skipped battery optimization
         if (BatteryOptimizationPreferenceManager.isSkipped(this)) {
-            android.util.Log.d("MainActivity", "User previously skipped battery optimization, proceeding to permissions")
+            Log.d("MainActivity", "User previously skipped battery optimization, proceeding to permissions")
             proceedWithPermissionCheck()
             return
         }
@@ -548,7 +555,7 @@ class MainActivity : OrientationAwareActivity() {
             }
             BatteryOptimizationStatus.ENABLED -> {
                 // Show battery optimization disable screen
-                android.util.Log.d("MainActivity", "Battery optimization enabled, showing disable screen")
+                Log.d("MainActivity", "Battery optimization enabled, showing disable screen")
                 mainViewModel.updateOnboardingState(OnboardingState.BATTERY_OPTIMIZATION_CHECK)
                 mainViewModel.updateBatteryOptimizationLoading(false)
             }
@@ -559,7 +566,7 @@ class MainActivity : OrientationAwareActivity() {
      * Handle Battery Optimization disabled callback
      */
     private fun handleBatteryOptimizationDisabled() {
-        android.util.Log.d("MainActivity", "Battery optimization disabled by user")
+        Log.d("MainActivity", "Battery optimization disabled by user")
         mainViewModel.updateBatteryOptimizationLoading(false)
         mainViewModel.updateBatteryOptimizationStatus(BatteryOptimizationStatus.DISABLED)
         proceedWithPermissionCheck()
@@ -569,7 +576,7 @@ class MainActivity : OrientationAwareActivity() {
      * Handle Battery Optimization failed callback
      */
     private fun handleBatteryOptimizationFailed(message: String) {
-        android.util.Log.w("MainActivity", "Battery optimization disable failed: $message")
+        Log.w("MainActivity", "Battery optimization disable failed: $message")
         mainViewModel.updateBatteryOptimizationLoading(false)
         val currentStatus = when {
             !batteryOptimizationManager.isBatteryOptimizationSupported() -> BatteryOptimizationStatus.NOT_SUPPORTED

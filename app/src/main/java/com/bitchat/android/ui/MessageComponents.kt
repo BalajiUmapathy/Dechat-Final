@@ -119,7 +119,7 @@ fun MessagesList(
     ) {
         items(
             items = messages.asReversed(),
-            key = { it.id }
+            key = { "${it.id}-${it.sender}-${it.content}" }
         ) { message ->
                 MessageItem(
                     message = message,

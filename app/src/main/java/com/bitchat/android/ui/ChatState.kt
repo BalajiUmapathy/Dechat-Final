@@ -229,7 +229,7 @@ class ChatState {
     }
     
     fun setChannelMessages(messages: Map<String, List<BitchatMessage>>) {
-        _channelMessages.value = messages
+        _channelMessages.value = messages.toMap()
     }
     
     fun setUnreadChannelMessages(unread: Map<String, Int>) {
