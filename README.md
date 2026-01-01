@@ -1,23 +1,20 @@
 <p align="center">
-    <img src="https://github.com/user-attachments/assets/188c42f8-d249-4a72-b27a-e2b4f10a00a8" alt="Bitchat Android Logo" width="480">
+    <!-- <img src="https://github.com/user-attachments/assets/188c42f8-d249-4a72-b27a-e2b4f10a00a8" alt="Dechat Android Logo" width="480"> -->
+    <h1>Dechat for Android</h1>
 </p>
 
 > [!WARNING]
 > This software has not received external security review and may contain vulnerabilities and may not necessarily meet its stated security goals. Do not use it for sensitive use cases, and do not rely on its security until it has been reviewed. Work in progress.
 
-# bitchat for Android
+# Dechat
 
-A secure, decentralized, peer-to-peer messaging app that works over Bluetooth mesh networks. No internet required for mesh chats, no servers, no phone numbers - just pure encrypted communication. Bitchat also supports geohash channels, which use an internet connection to connect you with others in your geographic area.
+A secure, decentralized, peer-to-peer messaging app that works over Bluetooth mesh networks. No internet required for mesh chats, no servers, no phone numbers - just pure encrypted communication. Dechat also supports geohash channels, which use an internet connection to connect you with others in your geographic area.
 
-This is the **Android port** of the original [bitchat iOS app](https://github.com/jackjackbits/bitchat), maintaining 100% protocol compatibility for cross-platform communication.
+This is the **Android** implementation of the decentralized chat protocol, designed for secure, off-grid communication.
 
-## Install bitchat
+## Install Dechat
 
-You can download the latest version of bitchat for Android from the [GitHub Releases page](https://github.com/permissionlesstech/bitchat-android/releases).
-
-Or you can:
-
-[<img alt="Get it on Google Play" height="60" src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png"/>](https://play.google.com/store/apps/details?id=com.bitchat.droid)
+You can download the latest version of Dechat for Android from the [GitHub Releases page](https://github.com/BalajiUmapathy/Dechat/releases).
 
 **Instructions:**
 
@@ -31,7 +28,6 @@ This project is released into the public domain. See the [LICENSE](LICENSE.md) f
 
 ## Features
 
-- **✅ Cross-Platform Compatible**: Full protocol compatibility with iOS bitchat
 - **✅ Decentralized Mesh Network**: Automatic peer discovery and multi-hop message relay over Bluetooth LE
 - **✅ End-to-End Encryption**: X25519 key exchange + AES-256-GCM for private messages
 - **✅ Channel-Based Chats**: Topic-based group messaging with optional password protection
@@ -41,7 +37,7 @@ This project is released into the public domain. See the [LICENSE](LICENSE.md) f
 - **✅ Message Retention**: Optional channel-wide message saving controlled by channel owners
 - **✅ Emergency Wipe**: Triple-tap logo to instantly clear all data
 - **✅ Modern Android UI**: Jetpack Compose with Material Design 3
-- **✅ Dark/Light Themes**: Terminal-inspired aesthetic matching iOS version
+- **✅ Dark/Light Themes**: Terminal-inspired aesthetic
 - **✅ Battery Optimization**: Adaptive scanning and power management
 
 ## Android Setup
@@ -57,14 +53,14 @@ This project is released into the public domain. See the [LICENSE](LICENSE.md) f
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/permissionlesstech/bitchat-android.git
-   cd bitchat-android
+   git clone https://github.com/BalajiUmapathy/Dechat.git
+   cd Dechat
    ```
 
 2. **Open in Android Studio:**
    ```bash
    # Open Android Studio and select "Open an Existing Project"
-   # Navigate to the bitchat-android directory
+   # Navigate to the Dechat directory
    ```
 
 3. **Build the project:**
@@ -130,16 +126,16 @@ The app requires the following permissions (automatically requested):
 
 1. **Install the app** on your Android device (requires Android 8.0+)
 2. **Grant permissions** for Bluetooth and location when prompted
-3. **Launch bitchat** - it will auto-start mesh networking
+3. **Launch Dechat** - it will auto-start mesh networking
 4. **Set your nickname** or use the auto-generated one
-5. **Connect automatically** to nearby iOS and Android bitchat users
+5. **Connect automatically** to nearby users
 6. **Join a channel** with `/j #general` or start chatting in public
 7. **Messages relay** through the mesh network to reach distant peers
 
 ### Android UI Features
 
 - **Jetpack Compose UI**: Modern Material Design 3 interface
-- **Dark/Light Themes**: Terminal-inspired aesthetic matching iOS
+- **Dark/Light Themes**: Terminal-inspired aesthetic
 - **Haptic Feedback**: Vibrations for interactions and notifications
 - **Adaptive Layout**: Optimized for various Android screen sizes
 - **Message Status**: Real-time delivery and read receipts
@@ -191,7 +187,7 @@ The app requires the following permissions (automatically requested):
 ## Technical Architecture
 
 ### Binary Protocol
-bitchat uses an efficient binary protocol optimized for Bluetooth LE:
+Dechat uses an efficient binary protocol optimized for Bluetooth LE:
 - Compact packet format with 1-byte type field
 - TTL-based message routing (max 7 hops)
 - Automatic fragmentation for large messages
@@ -214,12 +210,12 @@ bitchat uses an efficient binary protocol optimized for Bluetooth LE:
 
 ### Core Components
 
-1. **BitchatApplication.kt**: Application-level initialization and dependency injection
+1. **DechatApplication.kt**: Application-level initialization and dependency injection
 2. **MainActivity.kt**: Main activity handling permissions and UI hosting
 3. **ChatViewModel.kt**: MVVM pattern managing app state and business logic
 4. **BluetoothMeshService.kt**: Core BLE mesh networking (central + peripheral roles)
 5. **EncryptionService.kt**: Cryptographic operations using BouncyCastle
-6. **BinaryProtocol.kt**: Binary packet encoding/decoding matching iOS format
+6. **BinaryProtocol.kt**: Binary packet encoding/decoding
 7. **ChatScreen.kt**: Jetpack Compose UI with Material Design 3
 
 ### Dependencies
@@ -230,62 +226,6 @@ bitchat uses an efficient binary protocol optimized for Bluetooth LE:
 - **Kotlin Coroutines**: Asynchronous programming
 - **LZ4**: Message compression (when enabled)
 - **EncryptedSharedPreferences**: Secure local storage
-
-### Binary Protocol Compatibility
-
-The Android implementation maintains 100% binary protocol compatibility with iOS:
-- **Header Format**: Identical 13-byte header structure
-- **Packet Types**: Same message types and routing logic
-- **Encryption**: Identical cryptographic algorithms and key exchange
-- **UUIDs**: Same Bluetooth service and characteristic identifiers
-- **Fragmentation**: Compatible message fragmentation for large content
-
-## Publishing to Google Play
-
-### Preparation
-
-1. **Update version information:**
-   ```kotlin
-   // In app/build.gradle.kts
-   defaultConfig {
-       versionCode = 2  // Increment for each release
-       versionName = "1.1.0"  // User-visible version
-   }
-   ```
-
-2. **Create a signed release build:**
-   ```bash
-   ./gradlew assembleRelease
-   ```
-
-3. **Generate app bundle (recommended for Play Store):**
-   ```bash
-   ./gradlew bundleRelease
-   ```
-
-### Play Store Requirements
-
-- **Target API**: Latest Android API (currently 34)
-- **Privacy Policy**: Required for apps requesting sensitive permissions
-- **App Permissions**: Justify Bluetooth and location usage
-- **Content Rating**: Complete questionnaire for age-appropriate content
-
-### Distribution
-
-- **Google Play Store**: Main distribution channel
-- **F-Droid**: For open-source distribution
-- **Direct APK**: For testing and development
-
-## Cross-Platform Communication
-
-This Android port enables seamless communication with the original iOS bitchat app:
-
-- **iPhone ↔ Android**: Full bidirectional messaging
-- **Mixed Groups**: iOS and Android users in same channels
-- **Feature Parity**: All commands and encryption work across platforms
-- **Protocol Sync**: Identical message format and routing behavior
-
-**iOS Version**: For iPhone/iPad users, get the original bitchat at [github.com/jackjackbits/bitchat](https://github.com/jackjackbits/bitchat)
 
 ## Contributing
 
@@ -300,8 +240,4 @@ Contributions are welcome! Key areas for enhancement:
 ## Support & Issues
 
 - **Bug Reports**: [Create an issue](../../issues) with device info and logs
-- **Feature Requests**: [Start a discussion](https://github.com/orgs/permissionlesstech/discussions)
-- **Security Issues**: Email security concerns privately
-- **iOS Compatibility**: Cross-reference with [original iOS repo](https://github.com/jackjackbits/bitchat)
-
-For iOS-specific issues, please refer to the [original iOS bitchat repository](https://github.com/jackjackbits/bitchat).
+- **Feature Requests**: [Start a discussion](https://github.com/BalajiUmapathy/Dechat/discussions)
